@@ -136,6 +136,9 @@ public abstract class MenuPanel {
         if (this.primaryMenu == null || this.primaryMenu.inventory == null) {
             return;
         }
+        if (Objects.equals(title, this.primaryMenu.title)) {
+            return;
+        }
         this.primaryMenu.title = title;
         this.primaryMenu.createInventory();
     }
