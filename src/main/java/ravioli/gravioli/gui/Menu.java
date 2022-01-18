@@ -69,12 +69,11 @@ public abstract class Menu extends MenuPanel implements Listener {
             }
             newInventory.setItem(i, itemStack);
         }
-        this.updateInventory(newInventory);
-
         final List<HumanEntity> viewers = new ArrayList<>(this.inventory.getViewers());
 
+        this.updateInventory(newInventory);
+
         for (final HumanEntity viewer : viewers) {
-            viewer.closeInventory();
             viewer.openInventory(newInventory);
         }
     }
@@ -130,8 +129,6 @@ public abstract class Menu extends MenuPanel implements Listener {
             return;
         }
         event.setCancelled(true);
-
-        System.out.println("Clicked " + this.getClass().getSimpleName() + " menu!");
 
         this.processClicks(event);
     }
