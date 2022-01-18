@@ -74,8 +74,8 @@ public abstract class Menu extends MenuPanel implements Listener {
         final List<HumanEntity> viewers = new ArrayList<>(this.inventory.getViewers());
 
         for (final HumanEntity viewer : viewers) {
+            viewer.closeInventory();
             viewer.openInventory(newInventory);
-            viewer.sendMessage("Open new inventory because of title change to " + this.inventory);
         }
     }
 
