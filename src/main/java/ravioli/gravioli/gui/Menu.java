@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Menu extends MenuPanel implements Listener {
-    static final ItemStack AIR = new ItemStack(Material.AIR);
+    public static final ItemStack AIR = new ItemStack(Material.AIR);
 
     private final Plugin plugin;
     private final InventoryType inventoryType;
