@@ -56,34 +56,44 @@ public abstract class Menu extends MenuPanel implements Listener {
         this.primaryMenu = this;
     }
 
+    private void refreshInventory() {
+        final Inventory newInventory;
+
+        if (this.inventoryType == InventoryType.CHEST) {
+            newInventory = Bukkit.createInventory(null, this.rows * 9, this.title);
+        } else {
+            newInventory = Bukkit.createInventory(null, this.inventoryType, this.title);
+        }
+        for (int i = 0; i < this.inventory.getSize(); i++) {
+            final ItemStack itemStack = this.inventory.getItem(i);
+
+            if (itemStack == null || itemStack.getType().isAir()) {
+                continue;
+            }
+            newInventory.setItem(i, itemStack);
+        }
+        final List<HumanEntity> viewers = new ArrayList<>(this.inventory.getViewers());
+
+        this.updateInventory(newInventory);
+
+        for (final HumanEntity viewer : viewers) {
+            viewer.openInventory(newInventory);
+        }
+    }
+
     protected void createInventory() {
+        if (Bukkit.isPrimaryThread()) {
+            this.refreshInventory();
+
+            return;
+        }
         final CountDownLatch latch = new CountDownLatch(1);
 
         Bukkit.getScheduler().runTask(
             this.plugin,
             () -> {
-                final Inventory newInventory;
+                this.refreshInventory();
 
-                if (this.inventoryType == InventoryType.CHEST) {
-                    newInventory = Bukkit.createInventory(null, this.rows * 9, this.title);
-                } else {
-                    newInventory = Bukkit.createInventory(null, this.inventoryType, this.title);
-                }
-                for (int i = 0; i < this.inventory.getSize(); i++) {
-                    final ItemStack itemStack = this.inventory.getItem(i);
-
-                    if (itemStack == null || itemStack.getType().isAir()) {
-                        continue;
-                    }
-                    newInventory.setItem(i, itemStack);
-                }
-                final List<HumanEntity> viewers = new ArrayList<>(this.inventory.getViewers());
-
-                this.updateInventory(newInventory);
-
-                for (final HumanEntity viewer : viewers) {
-                    viewer.openInventory(newInventory);
-                }
                 latch.countDown();
             }
         );
