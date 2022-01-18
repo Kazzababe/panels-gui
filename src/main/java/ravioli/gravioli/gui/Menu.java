@@ -17,6 +17,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class Menu extends MenuPanel implements Listener {
     static final ItemStack AIR = new ItemStack(Material.AIR);
 
@@ -58,12 +61,22 @@ public abstract class Menu extends MenuPanel implements Listener {
         } else {
             newInventory = Bukkit.createInventory(null, this.inventoryType, this.title);
         }
-        newInventory.setStorageContents(this.inventory.getStorageContents());
+        for (int i = 0; i < this.inventory.getSize(); i++) {
+            final ItemStack itemStack = this.inventory.getItem(i);
 
-        for (final HumanEntity viewer : this.inventory.getViewers()) {
-            viewer.openInventory(newInventory);
+            if (itemStack == null || itemStack.getType().isAir()) {
+                continue;
+            }
+            newInventory.setItem(i, itemStack);
         }
         this.updateInventory(newInventory);
+
+        final List<HumanEntity> viewers = new ArrayList<>(this.inventory.getViewers());
+
+        for (final HumanEntity viewer : viewers) {
+            viewer.openInventory(newInventory);
+            viewer.sendMessage("Open new inventory because of title change to " + this.inventory);
+        }
     }
 
     /**
@@ -117,6 +130,8 @@ public abstract class Menu extends MenuPanel implements Listener {
             return;
         }
         event.setCancelled(true);
+
+        System.out.println("Clicked " + this.getClass().getSimpleName() + " menu!");
 
         this.processClicks(event);
     }
