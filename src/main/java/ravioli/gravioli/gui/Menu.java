@@ -19,6 +19,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class Menu extends MenuPanel implements Listener {
     public static final ItemStack AIR = new ItemStack(Material.AIR);
@@ -54,27 +57,40 @@ public abstract class Menu extends MenuPanel implements Listener {
     }
 
     protected void createInventory() {
-        final Inventory newInventory;
+        final CountDownLatch latch = new CountDownLatch(1);
 
-        if (this.inventoryType == InventoryType.CHEST) {
-            newInventory = Bukkit.createInventory(null, this.rows * 9, this.title);
-        } else {
-            newInventory = Bukkit.createInventory(null, this.inventoryType, this.title);
-        }
-        for (int i = 0; i < this.inventory.getSize(); i++) {
-            final ItemStack itemStack = this.inventory.getItem(i);
+        Bukkit.getScheduler().runTask(
+            this.plugin,
+            () -> {
+                final Inventory newInventory;
 
-            if (itemStack == null || itemStack.getType().isAir()) {
-                continue;
+                if (this.inventoryType == InventoryType.CHEST) {
+                    newInventory = Bukkit.createInventory(null, this.rows * 9, this.title);
+                } else {
+                    newInventory = Bukkit.createInventory(null, this.inventoryType, this.title);
+                }
+                for (int i = 0; i < this.inventory.getSize(); i++) {
+                    final ItemStack itemStack = this.inventory.getItem(i);
+
+                    if (itemStack == null || itemStack.getType().isAir()) {
+                        continue;
+                    }
+                    newInventory.setItem(i, itemStack);
+                }
+                final List<HumanEntity> viewers = new ArrayList<>(this.inventory.getViewers());
+
+                this.updateInventory(newInventory);
+
+                for (final HumanEntity viewer : viewers) {
+                    viewer.openInventory(newInventory);
+                }
+                latch.countDown();
             }
-            newInventory.setItem(i, itemStack);
-        }
-        final List<HumanEntity> viewers = new ArrayList<>(this.inventory.getViewers());
-
-        this.updateInventory(newInventory);
-
-        for (final HumanEntity viewer : viewers) {
-            viewer.openInventory(newInventory);
+        );
+        try {
+            latch.await();
+        } catch (final InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
