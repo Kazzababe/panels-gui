@@ -179,7 +179,7 @@ public abstract class MenuPanel {
                 if (row < this.y || row >= this.y + this.height) {
                     continue;
                 }
-                if (currentItemStack.equals(menuItemStack)) {
+                if (menuItemStack == null || currentItemStack.equals(menuItemStack)) {
                     continue;
                 }
                 this.inventory.setItem(i, menuItemStack);
@@ -202,8 +202,8 @@ public abstract class MenuPanel {
                     break;
                 }
                 final int slot = row * 9 + column;
-
                 final MenuItem menuItem = this.itemTable.get(row - this.y, column - this.x);
+
                 if (menuItem != null) {
                     itemStackMap.put(
                         slot,
@@ -212,6 +212,7 @@ public abstract class MenuPanel {
                     this.clickHandlers.put(slot, menuItem::onClick);
                 }
                 final MenuPanel menuPanel = this.panelTable.get(row - this.y, column - this.x);
+
                 if (menuPanel != null) {
                     foundMenuPanels.add(menuPanel);
                 }
