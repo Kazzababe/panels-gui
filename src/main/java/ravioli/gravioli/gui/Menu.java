@@ -3,6 +3,7 @@ package ravioli.gravioli.gui;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -10,23 +11,27 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class Menu extends MenuPanel implements Listener {
     public static final ItemStack AIR = new ItemStack(Material.AIR);
 
-    private final Plugin plugin;
+    final Plugin plugin;
+
     private final InventoryType inventoryType;
     private final int rows;
     private boolean open;
@@ -160,6 +165,17 @@ public abstract class Menu extends MenuPanel implements Listener {
     }
 
     @EventHandler
+    public final void onDrag(final InventoryDragEvent event) {
+        for (final int slot : event.getRawSlots()) {
+            if (slot < this.inventory.getSize()) {
+                event.setCancelled(true);
+
+                break;
+            }
+        }
+    }
+
+    @EventHandler
     public final void onCloseEvent(final InventoryCloseEvent event) {
         if (!this.open) {
             return;
@@ -180,6 +196,25 @@ public abstract class Menu extends MenuPanel implements Listener {
 
         this.open = false;
         this.onClose(player);
+
+        if (player.isOnline()) {
+            final PlayerInventory inventory = player.getInventory();
+            final NamespacedKey key = new NamespacedKey(this.plugin, "menu_item");
+
+            for (int i = 0; i < inventory.getSize(); i++) {
+                final ItemStack itemStack = inventory.getItem(i);
+
+                if (itemStack == null || itemStack.getType().isAir()) {
+                    continue;
+                }
+                final ItemMeta itemMeta = itemStack.getItemMeta();
+                final PersistentDataContainer container = itemMeta.getPersistentDataContainer();
+
+                if (container.has(key, PersistentDataType.STRING)) {
+                    inventory.clear(i);
+                }
+            }
+        }
     }
 
     /**
