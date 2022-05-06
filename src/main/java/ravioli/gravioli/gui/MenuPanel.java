@@ -3,6 +3,7 @@ package ravioli.gravioli.gui;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -15,6 +16,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import ravioli.gravioli.gui.exception.InventoryException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -155,7 +158,24 @@ public abstract class MenuPanel {
         this.primaryMenu.render(player);
     }
 
-    void updateInventory(final Inventory inventory) {
+    public void close(@NotNull final Player player) {
+        this.close(player, null);
+    }
+
+    public void close(@NotNull final Player player, @Nullable final String message) {
+        Bukkit.getScheduler().runTask(
+            this.primaryMenu.plugin,
+            () -> {
+                player.closeInventory();
+
+                if (message != null) {
+                    player.sendMessage(Component.text(message, NamedTextColor.RED));
+                }
+            }
+        );
+    }
+
+    void updateInventory(@NotNull final Inventory inventory) {
         this.inventory = inventory;
 
         for (final MenuPanel panel : this.panelTable.values()) {
@@ -163,7 +183,7 @@ public abstract class MenuPanel {
         }
     }
 
-    void render(final Player player) {
+    void render(@NotNull final Player player) {
         final Map<Integer, ItemStack> itemStackMap = new TreeMap<>(Comparator.comparingInt(i -> i));
 
         synchronized (this) {
@@ -235,8 +255,14 @@ public abstract class MenuPanel {
 
     void processPopulation(final Player player) {
         this.itemTable.clear();
-        this.populate(player);
 
+        try {
+            this.populate(player);
+        } catch (final InventoryException e) {
+            this.close(player, e.getMessage());
+
+            return;
+        }
         this.panelTable.values().forEach((panel) -> panel.processPopulation(player));
     }
 
@@ -260,7 +286,7 @@ public abstract class MenuPanel {
 
     }
 
-    protected abstract void populate(@NotNull final Player player);
+    protected abstract void populate(@NotNull final Player player) throws InventoryException;
 
     private static class MenuIcon extends MenuItem {
         private final ItemStack itemStack;

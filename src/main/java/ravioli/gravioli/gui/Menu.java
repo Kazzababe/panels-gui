@@ -35,6 +35,7 @@ public abstract class Menu extends MenuPanel implements Listener {
     private final InventoryType inventoryType;
     private final int rows;
     private boolean open;
+    private boolean canInteractBottom;
 
     protected Component title;
 
@@ -59,6 +60,10 @@ public abstract class Menu extends MenuPanel implements Listener {
             this.inventory = Bukkit.createInventory(null, type);
         }
         this.primaryMenu = this;
+    }
+
+    protected void setCanInteractWithBottom(final boolean canInteractBottom) {
+        this.canInteractBottom = canInteractBottom;
     }
 
     private void refreshInventory() {
@@ -107,6 +112,10 @@ public abstract class Menu extends MenuPanel implements Listener {
         } catch (final InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public void onPlayerInventoryClicked(@NotNull final Player player, final int slot) {
+
     }
 
     /**
@@ -165,7 +174,32 @@ public abstract class Menu extends MenuPanel implements Listener {
     }
 
     @EventHandler
+    public final void onBottomClickEvent(final InventoryClickEvent event) {
+        if (this.canInteractBottom || !(event.getWhoClicked() instanceof final Player player)) {
+            return;
+        }
+        final Inventory topInventory = event.getView().getTopInventory();
+
+        if (topInventory == null || !topInventory.equals(this.inventory)) {
+            return;
+        }
+        final Inventory clickedInventory = event.getClickedInventory();
+
+        if (clickedInventory == null || !clickedInventory.equals(event.getView().getBottomInventory())) {
+            return;
+        }
+        event.setCancelled(true);
+
+        this.onPlayerInventoryClicked(player, event.getSlot());
+    }
+
+    @EventHandler
     public final void onDrag(final InventoryDragEvent event) {
+        if (!this.canInteractBottom) {
+            event.setCancelled(true);
+
+            return;
+        }
         for (final int slot : event.getRawSlots()) {
             if (slot < this.inventory.getSize()) {
                 event.setCancelled(true);
