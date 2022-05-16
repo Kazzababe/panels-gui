@@ -206,12 +206,13 @@ public abstract class MenuPanel {
                 if (menuItemStack == null || currentItemStack.equals(menuItemStack)) {
                     continue;
                 }
-                final ItemMeta itemMeta = menuItemStack.getItemMeta();
-                final PersistentDataContainer container = itemMeta.getPersistentDataContainer();
+                if (menuItemStack.hasItemMeta()) {
+                    final ItemMeta itemMeta = menuItemStack.getItemMeta();
+                    final PersistentDataContainer container = itemMeta.getPersistentDataContainer();
 
-                container.set(new NamespacedKey(this.primaryMenu.plugin, "menu_item"), PersistentDataType.STRING, "1");
-                menuItemStack.setItemMeta(itemMeta);
-                
+                    container.set(new NamespacedKey(this.primaryMenu.plugin, "menu_item"), PersistentDataType.STRING, "1");
+                    menuItemStack.setItemMeta(itemMeta);
+                }
                 this.inventory.setItem(i, menuItemStack);
             }
         }
